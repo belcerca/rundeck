@@ -1,0 +1,16 @@
+#
+# Region needs to be in the nodes definition
+#
+export AWS_DEFAULT_REGION=us-east-1
+
+sh_command_id=$(/usr/local/bin/aws ssm send-command --document-name AWS-RunShellScript  --instance-ids "${RD_NODE_INSTANCEID}" --comment "Rundeck Node Command" --parameters "commands=${RD_EXEC_COMMAND}" --output text --query "Command.CommandId")
+sleep 10
+
+/usr/local/bin/aws ssm list-command-invocations --command-id $sh_command_id --details | /usr/bin/jq '.CommandInvocations[].CommandPlugins | .[].Output' | perl -pe 's/\\n/\n/g' | tr -d '\\r'
+
+if /usr/local/bin/aws ssm list-command-invocations --command-id $sh_command_id --details | /usr/bin/jq '.CommandInvocations[].CommandPlugins | .[].Status' | grep Success
+then
+    exit 0
+else
+    exit 1
+fi

@@ -1,0 +1,11 @@
+# yaml plugin metadata
+ 
+name: ssm_executor
+version: 1.0
+rundeckPluginVersion: 1.2
+providers:
+    - name: SSM
+      service: NodeExecutor
+      plugin-type: script
+      script-interpreter: /bin/bash
+      script-file: do-ssm
