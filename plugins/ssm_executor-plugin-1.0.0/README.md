@@ -1,6 +1,6 @@
 # ssm_executor
 
-Example AWS SSM Executor.
+Example AWS SSM Script Executor.
 
 Edit/Modify to suit your needs.
 
@@ -11,7 +11,9 @@ ec2 discovery plugin used to populate nodes.
 Usage :
 
 $ zip -r ssm_executor-plugin-1.0.0.zip ssm_executor-plugin-1.0.0/
+
 $ cp ssm_executor-plugin-1.0.0.zip /var/lib/rundeck/libext/
+
 $ /etc/init.d/rundeckd restart
 
 
