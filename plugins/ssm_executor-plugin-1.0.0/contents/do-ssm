@@ -1,16 +1,53 @@
 #
-# Region needs to be in the nodes definition
 #
-export AWS_DEFAULT_REGION=us-east-1
+#
+
+if [ -z "${RD_OPTION_REGION}" ]
+then
+    region="us-east-1"
+else
+    region="${RD_OPTION_REGION}"
+fi
+
+export AWS_DEFAULT_REGION=${region}
+
 
 sh_command_id=$(/usr/local/bin/aws ssm send-command --document-name AWS-RunShellScript  --instance-ids "${RD_NODE_INSTANCEID}" --comment "Rundeck Node Command" --parameters "commands=${RD_EXEC_COMMAND}" --output text --query "Command.CommandId")
-sleep 10
 
 /usr/local/bin/aws ssm list-command-invocations --command-id $sh_command_id --details | /usr/bin/jq '.CommandInvocations[].CommandPlugins | .[].Output' | perl -pe 's/\\n/\n/g' | tr -d '\\r'
 
-if /usr/local/bin/aws ssm list-command-invocations --command-id $sh_command_id --details | /usr/bin/jq '.CommandInvocations[].CommandPlugins | .[].Status' | grep Success
+while running=true
+do
+
+if /usr/local/bin/aws ssm list-command-invocations --command-id $sh_command_id --details | /usr/bin/jq '.CommandInvocations[].CommandPlugins | .[].Status' | grep Success >/dev/null 2>&1
 then
+    echo "Success"
     exit 0
-else
-    exit 1
 fi
+
+if /usr/local/bin/aws ssm list-command-invocations --command-id $sh_command_id --details | /usr/bin/jq '.CommandInvocations[].CommandPlugins | .[].Status' | grep InProgress >/dev/null 2>&1
+then
+        echo "InProgress"
+fi
+
+if /usr/local/bin/aws ssm list-command-invocations --command-id $sh_command_id --details | /usr/bin/jq '.CommandInvocations[].CommandPlugins | .[].Status' | grep TimedOut >/dev/null 2>&1
+then
+        echo "TimedOut"
+        exit 1
+fi
+
+if /usr/local/bin/aws ssm list-command-invocations --command-id $sh_command_id --details | /usr/bin/jq '.CommandInvocations[].CommandPlugins | .[].Status' | grep Cancelled >/dev/null 2>&1
+then
+        echo "Cancelled"
+        exit 1
+fi
+
+if /usr/local/bin/aws ssm list-command-invocations --command-id $sh_command_id --details | /usr/bin/jq '.CommandInvocations[].CommandPlugins | .[].Status' | grep Failed >/dev/null 2>&1
+then
+        echo "Failed"
+        exit 1
+fi
+
+sleep 5
+
+done
